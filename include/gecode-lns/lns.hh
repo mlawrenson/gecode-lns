@@ -68,6 +68,9 @@ namespace Gecode {
     class LNSBaseOptions
     {
     public:
+        virtual double initTime(void) const = 0;
+        virtual void initTime(double v) = 0;
+
         virtual double neighborTime(void) const = 0;
         virtual void neighborTime(double v) = 0;
 
@@ -82,6 +85,9 @@ namespace Gecode {
 
         virtual unsigned int minIntensity(void) const = 0;
         virtual void minIntensity(unsigned int v) = 0;
+
+        virtual unsigned int intensityStep(void) const = 0;
+        virtual void intensityStep(unsigned int v) = 0;
 
         virtual unsigned int maxIntensity(void) const = 0;
         virtual void maxIntensity(unsigned int v) = 0;
@@ -103,12 +109,14 @@ namespace Gecode {
     class LNSOptions : public LNSBaseOptions, public OptionsBase {
     public:
         LNSOptions(const char* p) : OptionsBase(p),
+        _init_time("-lns_init_time", "LNS: the fraction of total time limit to grant for initialisation before restarting", 1.0),
         _neighbor_time("-lns_time", "LNS: the time to grant for neighborhood exploration (in milliseconds)", 10.0),
         _per_variable("-lns_per_variable", "LNS: whether the time for neighborhood exploration is intended per-variable", true),
         _stop_at_first_neighbor("-lns_stop_at_first_neighbor", "LNS: stop after finding the first neighboring solution", true),
         _constrain_type("-lns_constrain_type", "LNS: the type of constrain function to be applied to search (default: strict, other values: none, loose, sa)", LNS_CT_STRICT),
         _max_iterations_per_intensity("-lns_max_iterations_per_intensity", "LNS: max non improving iterations before increasing relaxation intensity", 10),
         _min_intensity("-lns_min_intensity", "LNS: the minimum relaxation intensity", 1),
+        _intensity_step("-lns_intensity_step", "LNS: the step to increase relaxation intensity by", 1),
         _max_intensity("-lns_max_intensity", "LNS: the maximum relxation intensity", 5),
         _sa_start_temperature("-lns_sa_start_temperature", "LNS(SA): start temperature", 1.0),
         _sa_cooling_rate("-lns_sa_cooling_rate", "LNS(SA): cooling rate", 0.99),
@@ -119,12 +127,14 @@ namespace Gecode {
             _constrain_type.add(LNS_CT_STRICT, "strict");
             _constrain_type.add(LNS_CT_SA, "sa");
 
+            OptionsBase::add(_init_time);
             OptionsBase::add(_neighbor_time);
             OptionsBase::add(_per_variable);
             OptionsBase::add(_stop_at_first_neighbor);
             OptionsBase::add(_constrain_type);
             OptionsBase::add(_max_iterations_per_intensity);
             OptionsBase::add(_min_intensity);
+            OptionsBase::add(_intensity_step);
             OptionsBase::add(_max_intensity);
             OptionsBase::add(_sa_start_temperature);
             OptionsBase::add(_sa_cooling_rate);
@@ -134,6 +144,9 @@ namespace Gecode {
 
         double neighborTime(void) const { return _neighbor_time.value(); }
         void neighborTime(double v) { _neighbor_time.value(v); }
+
+        double initTime(void) const { return _init_time.value(); }
+        void initTime(double v) { _init_time.value(v); }
 
         bool perVariable(void) const { return _per_variable.value(); }
         void perVariable(bool v) { _per_variable.value(v); }
@@ -146,6 +159,9 @@ namespace Gecode {
 
         unsigned int minIntensity(void) const { return _min_intensity.value(); }
         void minIntensity(unsigned int v) { _min_intensity.value(v); }
+
+        unsigned int intensityStep(void) const { return _intensity_step.value(); }
+        void intensityStep(unsigned int v) { _intensity_step.value(v); }
 
         unsigned int maxIntensity(void) const { return _max_intensity.value(); }
         void maxIntensity(unsigned int v) { _max_intensity.value(v); }
@@ -164,17 +180,21 @@ namespace Gecode {
 
     protected:
         LNSOptions(const LNSOptions& opt)
-        : OptionsBase(opt), _neighbor_time(opt._neighbor_time), _per_variable(opt._per_variable), _stop_at_first_neighbor(opt._stop_at_first_neighbor), _constrain_type(opt._constrain_type), _max_iterations_per_intensity(opt._max_iterations_per_intensity),
-        _min_intensity(opt._min_intensity), _max_intensity(opt._max_intensity),
+        : OptionsBase(opt), _init_time(opt._init_time), _neighbor_time(opt._neighbor_time), _per_variable(opt._per_variable),
+          _stop_at_first_neighbor(opt._stop_at_first_neighbor), _constrain_type(opt._constrain_type),
+          _max_iterations_per_intensity(opt._max_iterations_per_intensity), _min_intensity(opt._min_intensity),
+          _max_intensity(opt._max_intensity), _intensity_step(opt._intensity_step),
         _sa_start_temperature(opt._sa_start_temperature), _sa_cooling_rate(opt._sa_cooling_rate), _sa_neighbors_accepted(opt._sa_neighbors_accepted)
         {}
         // LNS parmeters
+        Driver::DoubleOption _init_time;
         Driver::DoubleOption _neighbor_time;
         Driver::BoolOption _per_variable;
         Driver::BoolOption _stop_at_first_neighbor;
         Driver::StringOption _constrain_type;
         Driver::UnsignedIntOption _max_iterations_per_intensity;
         Driver::UnsignedIntOption _min_intensity;
+        Driver::UnsignedIntOption _intensity_step;
         Driver::UnsignedIntOption _max_intensity;
         // LNS-SA specific parameters
         Driver::DoubleOption _sa_start_temperature;
