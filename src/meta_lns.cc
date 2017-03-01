@@ -13,6 +13,7 @@
 #include "gecode-lns/meta_lns.hh"
 #include "gecode-lns/lns_space.hh"
 #include <list>
+#include <cmath>
 
 using namespace std;
 
@@ -51,6 +52,9 @@ namespace Gecode { namespace Search { namespace Meta {
                 neighbors_accepted = 0;
                 current = root->clone(shared);
                 LNSAbstractSpace* _current = dynamic_cast<LNSAbstractSpace*>(current);
+
+                // Calculate maximum intensity in variables
+                max_intensity = ceil(_current->max_relax() * lns_options->maxIntensity() / 100);
 
                 // In a restart, constraint cost if stated by the options
                 if (best != NULL)
@@ -116,8 +120,10 @@ namespace Gecode { namespace Search { namespace Meta {
                 if (idle_iterations > lns_options->maxIterationsPerIntensity())
                 {
                     // If we still have intensity levels, increase intensity and reset idle iterations
-                    if (intensity < lns_options->maxIntensity())
-                        intensity++;
+                    if (intensity + lns_options->intensityStep() <= max_intensity) {
+                      // Increase intensity by intensity step, unless we will blow maximum intensity
+                      intensity += lns_options->intensityStep();
+                    }
                     else {
 			// just restart from minimum intensity (the whole restart with inferior cost is too hard on cp)
                         intensity = lns_options->minIntensity();
@@ -307,6 +313,8 @@ namespace Gecode { namespace Search { namespace Meta {
         intensity = lns_options->minIntensity();
         neighbors_accepted = 0;
         temperature = lns_options->SAstartTemperature();
+        // Calculate maximum intensity in variables
+        max_intensity = ceil(_s->max_relax() * lns_options->maxIntensity() / 100);
     }
 
     LNS::~LNS(void) {

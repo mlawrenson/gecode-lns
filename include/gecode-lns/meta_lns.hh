@@ -47,6 +47,8 @@ namespace Gecode { namespace Search { namespace Meta {
     unsigned long int idle_iterations;
     /// The current intensity for LNS
     unsigned int intensity;
+    /// Maximum intensity in variables
+    unsigned int max_intensity;
     /// Whether the slave can be shared with the master
     bool shared;
     /// Random numbers generator

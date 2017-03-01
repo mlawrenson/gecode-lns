@@ -19,6 +19,9 @@ public:
   /** Method to generate a relaxed solution (i.e., a neighbor) from the current one (this) */
   virtual unsigned int relax(Space* neighbor, unsigned int free) = 0;
 
+  /** Method to get the maximum number of variables that can be relaxed in our space */
+  virtual unsigned int max_relax() = 0;
+
   /* Returns whether the current space is improving w.r.t. s */
   virtual bool improving(const Space& s, bool strict = true) = 0;
 
