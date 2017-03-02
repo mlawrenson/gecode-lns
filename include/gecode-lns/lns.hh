@@ -71,6 +71,9 @@ namespace Gecode {
         virtual double initTime(void) const = 0;
         virtual void initTime(double v) = 0;
 
+        virtual double totalTime(void) const = 0;
+        virtual void totalTime(double v) = 0;
+
         virtual double neighborTime(void) const = 0;
         virtual void neighborTime(double v) = 0;
 
@@ -110,6 +113,7 @@ namespace Gecode {
     public:
         LNSOptions(const char* p) : OptionsBase(p),
         _init_time("-lns_init_time", "LNS: the fraction of total time limit to grant for initialisation before restarting", 1.0),
+        _tot_time("-lns_time_limit", "LNS: this is a hack to get the total time limit through", 0.0),
         _neighbor_time("-lns_time", "LNS: the time to grant for neighborhood exploration (in milliseconds)", 10.0),
         _per_variable("-lns_per_variable", "LNS: whether the time for neighborhood exploration is intended per-variable", true),
         _stop_at_first_neighbor("-lns_stop_at_first_neighbor", "LNS: stop after finding the first neighboring solution", true),
@@ -128,6 +132,7 @@ namespace Gecode {
             _constrain_type.add(LNS_CT_SA, "sa");
 
             OptionsBase::add(_init_time);
+            OptionsBase::add(_tot_time);
             OptionsBase::add(_neighbor_time);
             OptionsBase::add(_per_variable);
             OptionsBase::add(_stop_at_first_neighbor);
@@ -144,6 +149,9 @@ namespace Gecode {
 
         double neighborTime(void) const { return _neighbor_time.value(); }
         void neighborTime(double v) { _neighbor_time.value(v); }
+
+        double totalTime(void) const { return _tot_time.value(); }
+        void totalTime(double v) { _tot_time.value(v); }
 
         double initTime(void) const { return _init_time.value(); }
         void initTime(double v) { _init_time.value(v); }
@@ -180,7 +188,7 @@ namespace Gecode {
 
     protected:
         LNSOptions(const LNSOptions& opt)
-        : OptionsBase(opt), _init_time(opt._init_time), _neighbor_time(opt._neighbor_time), _per_variable(opt._per_variable),
+        : OptionsBase(opt), _init_time(opt._init_time), _tot_time(opt._tot_time), _neighbor_time(opt._neighbor_time), _per_variable(opt._per_variable),
           _stop_at_first_neighbor(opt._stop_at_first_neighbor), _constrain_type(opt._constrain_type),
           _max_iterations_per_intensity(opt._max_iterations_per_intensity), _min_intensity(opt._min_intensity),
           _max_intensity(opt._max_intensity), _intensity_step(opt._intensity_step),
@@ -188,6 +196,7 @@ namespace Gecode {
         {}
         // LNS parmeters
         Driver::DoubleOption _init_time;
+        Driver::DoubleOption _tot_time;
         Driver::DoubleOption _neighbor_time;
         Driver::BoolOption _per_variable;
         Driver::BoolOption _stop_at_first_neighbor;
@@ -269,8 +278,9 @@ namespace Gecode {
         } else {
             root = s;
         }
-        Search::Options& s_opt(const_cast<Search::Options&>(m_opt));
+        Search::Options s_opt(const_cast<Search::Options&>(m_opt));
         s_opt.clone = true;
+        s_opt.stop = ts;
         engine = new E<T>(dynamic_cast<T*>(root),e_opt);
         Search::Engine* ee = engine->e; // FIXME: now this class has to be friend of BaseEngine to allow it
         engine->e = NULL;

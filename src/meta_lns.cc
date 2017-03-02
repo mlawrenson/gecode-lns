@@ -13,6 +13,8 @@
 #include "gecode-lns/meta_lns.hh"
 #include "gecode-lns/lns_space.hh"
 #include <list>
+#include <thread>
+#include <chrono>
 #include <cmath>
 
 using namespace std;
@@ -45,6 +47,11 @@ namespace Gecode { namespace Search { namespace Meta {
             // We landed in this function for the first time or after a restart
             if (current == NULL)
             {
+                // Check if we have timed out
+                if (m_stop->stop(statistics(), opt)) {
+                    return NULL;
+                }
+
                 // Reset default search parameters (including Simulated Annealing ones)
                 intensity = lns_options->minIntensity();
                 temperature = lns_options->SAstartTemperature();
@@ -83,6 +90,12 @@ namespace Gecode { namespace Search { namespace Meta {
 
                 // Look for (one) initial solution with same stopping condition as the overall LNS
                 se->reset(current);
+                TimeStop* t_stop = dynamic_cast<TimeStop*>(e_stop);
+
+                // Set time limit
+                t_stop->limit(lns_options->initTime() * lns_options->totalTime());
+                t_stop->reset();
+
                 Space* n = se->next();
 
                 // If we find a starting solution
@@ -110,7 +123,7 @@ namespace Gecode { namespace Search { namespace Meta {
                 }
                 else
                     // Problem has no solution
-                    return NULL;
+                    current = NULL;
             }
 
             // We landed in this function after a previous call to next or we are currently looping
